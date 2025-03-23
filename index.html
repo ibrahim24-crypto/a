@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Accès Sécurisé</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            background: #1a1a1a;
+            color: #fff;
+        }
+
+        .container {
+            background: #2d2d2d;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.1);
+            text-align: center;
+        }
+
+        h1 {
+            color: #4CAF50;
+            margin-bottom: 1.5rem;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 20px;
+            margin-top: 2rem;
+        }
+
+        .btn {
+            padding: 1rem 2rem;
+            background: #4CAF50;
+            border: none;
+            border-radius: 5px;
+            color: white;
+            cursor: pointer;
+            font-size: 1.1rem;
+            transition: transform 0.3s ease;
+        }
+
+        .btn:hover {
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Accès admin</h1>
+        <div class="btn-group">
+            <button class="btn" onclick="verifyAndRedirect('ff.html')">Admin FF</button>
+            <button class="btn" onclick="verifyAndRedirect('has.html')">Admin HAS</button>
+        </div>
+    </div>
+
+    <script>
+        const CLE_CHIFFREMENT = 3141592653;
+        const API_URL = 'https://sheetdb.io/api/v1/y067qqqcxmy23';
+        let codesValides = [];
+
+        function dechiffrer(code) {
+            try {
+                return code.split('').map((d, i) => {
+                    const digit = parseInt(d);
+                    const keyDigit = parseInt(String(CLE_CHIFFREMENT)[i % 10]);
+                    return (digit - keyDigit + 10) % 10;
+                }).join('');
+            } catch (e) {
+                return null;
+            }
+        }
+
+        async function chargerCodes() {
+            try {
+                const response = await fetch(API_URL);
+                if (!response.ok) throw new Error('Erreur réseau');
+                const data = await response.json();
+                codesValides = data.map(item => dechiffrer(item.code)).filter(Boolean);
+            } catch (error) {
+                alert("Erreur de connexion - Redémarrage...");
+                setTimeout(() => location.reload(), 2000);
+            }
+        }
+
+        async function verifierCode() {
+            try {
+                const codeEntre = prompt("Entrez le code d'accès à 10 chiffres :");
+                
+                if (!codeEntre || codeEntre.length !== 10 || isNaN(codeEntre)) {
+                    alert("Format invalide !");
+                    return false;
+                }
+
+                if (!codesValides.includes(codeEntre)) {
+                    alert("Code incorrect - Redémarrage...");
+                    setTimeout(() => location.reload(), 2000);
+                    return false;
+                }
+
+                return true;
+            } catch (e) {
+                console.error("Erreur:", e);
+                return false;
+            }
+        }
+
+        async function verifyAndRedirect(url) {
+            if (await verifierCode()) {
+                window.location.href = url;
+            }
+        }
+
+        // Initialisation
+        window.onload = async () => {
+            await chargerCodes();
+            if (await verifierCode()) {
+                document.body.style.display = "flex";
+            } else {
+                document.body.style.display = "none";
+            }
+        };
+    </script>
+</body>
+</html>
